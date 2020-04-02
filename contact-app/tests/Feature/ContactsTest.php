@@ -29,7 +29,7 @@ class ContactsTest extends TestCase
 
         $this->assertEquals('Test Name', $contact->name);
         $this->assertEquals('test@example.com', $contact->email);
-        $this->assertEquals('05/14/1988', $contact->birthday);
+        $this->assertInstanceOf(Carbon::class, $contact->birthday);
         $this->assertEquals('ABC String', $contact->company);
     }
 
@@ -91,6 +91,26 @@ class ContactsTest extends TestCase
         $this->assertCount(1, Contact::all());
         $this->assertInstanceOf(Carbon::class, Contact::first()->birthday);
         $this->assertEquals('05-14-1988', Contact::first()->birthday->format('m-d-Y'));
+    }
+
+    /**
+     * 
+     * A test to validate that we can retrieve a contact from the database.
+     * 
+     * @return void
+     * @test
+     */
+    public function a_contact_can_be_retrieved()
+    {
+        $contact = factory(Contact::class)->create();
+
+        $response = $this->get('/api/contacts/' . $contact->id);
+        $response->assertJsonFragment([
+            'name' => $contact->name,
+            'email' => $contact->email,
+            'birthday' => $contact->birthday,
+            'company' => $contact->company,
+        ]);
     }
 
     private function data()
