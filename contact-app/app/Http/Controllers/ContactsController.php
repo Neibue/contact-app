@@ -7,9 +7,15 @@ use App\Contact;
 
 class ContactsController extends Controller
 {
-    public function store() {
-        Contact::create([
-            'name' => request('name'),
+    public function store()
+    {
+        $data = request()->validate([
+            'name' => 'required',
+            'email' => 'required',
+            'birthday' => '',
+            'company' => '',
         ]);
+
+        Contact::create($data);
     }
 }
