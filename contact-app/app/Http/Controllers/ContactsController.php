@@ -31,4 +31,9 @@ class ContactsController extends Controller
             'company' => 'required',
         ]);
     }
+
+    public function destroy(Contact $contact)
+    {
+        $contact->delete();
+    }
 }
