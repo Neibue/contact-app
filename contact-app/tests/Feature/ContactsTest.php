@@ -29,7 +29,7 @@ class ContactsTest extends TestCase
 
         $this->assertEquals('Test Name', $contact->name);
         $this->assertEquals('test@example.com', $contact->email);
-        $this->assertInstanceOf(Carbon::class, $contact->birthday);
+        $this->assertEquals('05/14/1988', $contact->birthday->format('m/d/Y'));
         $this->assertEquals('ABC String', $contact->company);
     }
 
@@ -111,6 +111,29 @@ class ContactsTest extends TestCase
             'birthday' => $contact->birthday,
             'company' => $contact->company,
         ]);
+    }
+
+    /**
+     * 
+     * A test to validate that a contact can be updated
+     * 
+     * @return void
+     * @test
+     */
+    public function a_contact_can_be_patched()
+    {
+        $this->withoutExceptionHandling();
+
+        $contact = factory(Contact::class)->create();
+
+        $response = $this->patch('/api/contacts/' . $contact->id, $this->data());
+
+        $contact = $contact->fresh();
+
+        $this->assertEquals('Test Name', $contact->name);
+        $this->assertEquals('test@example.com', $contact->email);
+        $this->assertEquals('05/14/1988', $contact->birthday->format('m/d/Y'));
+        $this->assertEquals('ABC String', $contact->company);
     }
 
     private function data()
