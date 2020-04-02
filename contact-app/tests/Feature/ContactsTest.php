@@ -3,14 +3,26 @@
 namespace Tests\Feature;
 
 use App\Contact;
+use App\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
+use function GuzzleHttp\Promise\all;
+
 class ContactsTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected $user;
+
+    protected function setup(): void
+    {
+        parent::setup();
+
+        $this->user = factory(User::class)->create();
+    }
 
     /**
      * A test to validate if a contact can be added.
@@ -19,9 +31,26 @@ class ContactsTest extends TestCase
      * 
      * @test
      */
-    public function a_contact_can_be_added()
+    public function an_unauthorized_user_should_be_redirected_to_login()
     {
-        $this->withoutExceptionHandling();
+        $response = $this->post(
+            '/api/contacts',
+            array_merge($this->data(), ['api_token' => ''])
+        );
+
+        $response->assertRedirect('/login');
+        $this->assertCount(0, Contact::all());
+    }
+
+    /**
+     * A test to validate if a contact can be added.
+     *
+     * @return void
+     * 
+     * @test
+     */
+    public function an_authenticated_user_can_add_a_contact()
+    {
 
         $this->post('/api/contacts', $this->data());
 
@@ -81,8 +110,6 @@ class ContactsTest extends TestCase
      */
     public function birthdays_are_properly_stored()
     {
-        $this->withoutExceptionHandling();
-
         $response = $this->post(
             '/api/contacts',
             array_merge($this->data())
@@ -104,7 +131,7 @@ class ContactsTest extends TestCase
     {
         $contact = factory(Contact::class)->create();
 
-        $response = $this->get('/api/contacts/' . $contact->id);
+        $response = $this->get('/api/contacts/' . $contact->id . '?api_token=' . $this->user->api_token);
         $response->assertJsonFragment([
             'name' => $contact->name,
             'email' => $contact->email,
@@ -122,8 +149,6 @@ class ContactsTest extends TestCase
      */
     public function a_contact_can_be_patched()
     {
-        $this->withoutExceptionHandling();
-
         $contact = factory(Contact::class)->create();
 
         $response = $this->patch('/api/contacts/' . $contact->id, $this->data());
@@ -143,11 +168,9 @@ class ContactsTest extends TestCase
      */
     public function a_contact_can_be_deleted()
     {
-        $this->withoutExceptionHandling();
-
         $contact = factory(Contact::class)->create();
 
-        $response = $this->delete('/api/contacts/' . $contact->id);
+        $response = $this->delete('/api/contacts/' . $contact->id, ['api_token' => $this->user->api_token]);
 
         $this->assertCount(0, Contact::all());
     }
@@ -158,7 +181,8 @@ class ContactsTest extends TestCase
             'name' => 'Test Name',
             'email' => 'test@example.com',
             'birthday' => '05/14/1988',
-            'company' => 'ABC String'
+            'company' => 'ABC String',
+            'api_token' => $this->user->api_token,
         ];
     }
 }
