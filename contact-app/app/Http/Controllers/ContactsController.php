@@ -7,18 +7,30 @@ use App\Contact;
 
 class ContactsController extends Controller
 {
+    public function index()
+    {
+        return request()->user()->contacts;
+    }
+
     public function store()
     {
-        Contact::create($this->validateData());
+        request()->user()->contacts()->create($this->validateData());
     }
 
     public function show(Contact $contact)
     {
+        if (request()->user()->isNot($contact->user)) {
+            return response([], 403);
+        }
         return $contact;
     }
 
     public function update(Contact $contact)
     {
+        if (request()->user()->isNot($contact->user)) {
+            return response([], 403);
+        }
+
         $contact->update($this->validateData());
     }
 
@@ -34,6 +46,9 @@ class ContactsController extends Controller
 
     public function destroy(Contact $contact)
     {
+        if (request()->user()->isNot($contact->user)) {
+            return response([], 403);
+        }
         $contact->delete();
     }
 }
