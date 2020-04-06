@@ -7,6 +7,7 @@ use App\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Symfony\Component\HttpFoundation\Response;
 use Tests\TestCase;
 
 use function GuzzleHttp\Promise\all;
@@ -64,7 +65,11 @@ class ContactsTest extends TestCase
         $response->assertJsonCount(1)
             ->assertJson([
                 'data' => [
-                    ['contact_id' => $contact->id],
+                    [
+                        'data' => [
+                            'contact_id' => $contact->id
+                        ]
+                    ],
                 ]
             ]);
     }
@@ -79,7 +84,7 @@ class ContactsTest extends TestCase
     public function an_authenticated_user_can_add_a_contact()
     {
 
-        $this->post('/api/contacts', $this->data());
+        $response = $this->post('/api/contacts', $this->data());
 
         $contact = Contact::first();
 
@@ -87,6 +92,16 @@ class ContactsTest extends TestCase
         $this->assertEquals('test@example.com', $contact->email);
         $this->assertEquals('05/14/1988', $contact->birthday->format('m/d/Y'));
         $this->assertEquals('ABC String', $contact->company);
+
+        $response->assertStatus(Response::HTTP_CREATED);
+        $response->assertJson([
+            'data' => [
+                'contact_id' => $contact->id,
+            ],
+            'links' => [
+                'self' => $contact->path(),
+            ]
+        ]);
     }
 
     /**
@@ -205,6 +220,16 @@ class ContactsTest extends TestCase
         $this->assertEquals('test@example.com', $contact->email);
         $this->assertEquals('05/14/1988', $contact->birthday->format('m/d/Y'));
         $this->assertEquals('ABC String', $contact->company);
+
+        $response->assertStatus(Response::HTTP_OK)
+            ->assertJson([
+                'data' => [
+                    'contact_id' => $contact->id,
+                ],
+                'links' => [
+                    'self' => $contact->path(),
+                ]
+            ]);
     }
 
     /**
@@ -236,6 +261,8 @@ class ContactsTest extends TestCase
         $response = $this->delete('/api/contacts/' . $contact->id, ['api_token' => $this->user->api_token]);
 
         $this->assertCount(0, Contact::all());
+
+        $response->assertStatus(Response::HTTP_NO_CONTENT);
     }
 
     /**
